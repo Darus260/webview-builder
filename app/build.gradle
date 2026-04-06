@@ -7,7 +7,7 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.contoh.webview"
+        applicationId "com.app.identity"
         minSdk 24
         targetSdk 34
         versionCode 1
