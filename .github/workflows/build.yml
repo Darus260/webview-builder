@@ -9,6 +9,9 @@ on:
       webUrl:
         description: 'URL Website'
         required: true
+      logoUrl:
+        description: 'URL Logo Aplikasi'
+        required: true
       buildTag:
         description: 'Tag Unik'
         required: true
@@ -23,10 +26,20 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Inject Data
+      - name: Inject Data & Logo
         run: |
+          # 1. Mengubah Teks
           sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">${{ github.event.inputs.appName }}<\/string>/g' app/src/main/res/values/strings.xml
           sed -i 's|private String targetUrl = ".*";|private String targetUrl = "${{ github.event.inputs.webUrl }}";|g' app/src/main/java/com/contoh/webview/MainActivity.java
+          
+          # 2. FUNGSI BARU: Mendownload logo dan memasukkannya ke folder Android
+          wget -O app_icon.png "${{ github.event.inputs.logoUrl }}"
+          mkdir -p app/src/main/res/mipmap-mdpi app/src/main/res/mipmap-hdpi app/src/main/res/mipmap-xhdpi app/src/main/res/mipmap-xxhdpi app/src/main/res/mipmap-xxxhdpi
+          cp app_icon.png app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp app_icon.png app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp app_icon.png app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp app_icon.png app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp app_icon.png app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -34,13 +47,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # FUNGSI BARU: Menginstall Mesin Rakitan (Gradle) otomatis
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.4'
 
-      # UPDATE: Perintah rakitan diubah dari ./gradlew menjadi gradle
       - name: Build APK
         run: gradle assembleDebug
 
