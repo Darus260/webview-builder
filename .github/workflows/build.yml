@@ -16,7 +16,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Wajib ditambahkan agar GitHub Actions punya izin untuk memposting rilis baru
     permissions:
       contents: write 
 
@@ -35,10 +34,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # FUNGSI BARU: Menginstall Mesin Rakitan (Gradle) otomatis
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.4'
+
+      # UPDATE: Perintah rakitan diubah dari ./gradlew menjadi gradle
       - name: Build APK
-        run: |
-          chmod +x ./gradlew
-          ./gradlew assembleDebug
+        run: gradle assembleDebug
 
       - name: Ubah Nama File APK
         run: mv app/build/outputs/apk/debug/app-debug.apk ${{ github.event.inputs.appName }}.apk
