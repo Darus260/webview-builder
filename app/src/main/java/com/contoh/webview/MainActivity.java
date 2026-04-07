@@ -1,6 +1,7 @@
 package com.contoh.webview;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,29 +21,44 @@ public class MainActivity extends AppCompatActivity {
     private String targetUrl = "https://google.com";
     private WebView webView;
 
+    @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // PERUBAHAN: Permintaan izin di awal Dihapus. Aplikasi akan langsung memuat web.
-
         webView = findViewById(R.id.webView);
         
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
-        webSettings.setDomStorageEnabled(true); 
-        webSettings.setDatabaseEnabled(true);
-        webSettings.setGeolocationEnabled(true); 
         
+        // --- KONFIGURASI PENYIMPANAN UNIVERSAL MAKSIMAL ---
+        webSettings.setDomStorageEnabled(true); // Wajib untuk localStorage Frontend
+        webSettings.setDatabaseEnabled(true);
+        webSettings.setAllowFileAccess(true);
+        webSettings.setAllowContentAccess(true);
+        webSettings.setGeolocationEnabled(true);
+        
+        // Memaksa WebView mengizinkan pertukaran data lintas domain (CORS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            webSettings.setAllowUniversalAccessFromFileURLs(true);
+            webSettings.setAllowFileAccessFromFileURLs(true);
+        }
+        
+        // Mengizinkan konten campuran (HTTP dan HTTPS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        }
+        
+        // Memaksa sistem menerima semua jenis Cookie
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
-        cookieManager.setAcceptThirdPartyCookies(webView, true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            cookieManager.setAcceptThirdPartyCookies(webView, true);
+        }
 
-        // LOGIKA BARU: Izin Dinamis
+        // --- IZIN DINAMIS KETERANGAN KAMERA & LOKASI ---
         webView.setWebChromeClient(new WebChromeClient() {
-            
-            // Saat website menjalankan fungsi Lokasi/GPS
             @Override
             public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -53,7 +69,6 @@ public class MainActivity extends AppCompatActivity {
                 callback.invoke(origin, true, false);
             }
 
-            // Saat website menjalankan fungsi Kamera/Media
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -65,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Penyimpanan Cookie Sesi Login Instan
+        // --- PENYIMPANAN SESI INSTAN ---
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
