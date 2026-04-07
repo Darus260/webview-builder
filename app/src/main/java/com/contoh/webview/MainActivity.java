@@ -24,7 +24,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 1. Meminta izin ke HP pengguna saat aplikasi pertama kali dibuka
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ActivityCompat.requestPermissions(this, new String[]{
                     Manifest.permission.CAMERA,
@@ -37,32 +36,35 @@ public class MainActivity extends AppCompatActivity {
         
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
-        webSettings.setDomStorageEnabled(true);
+        webSettings.setDomStorageEnabled(true); // Sangat penting untuk web modern (LocalStorage)
         webSettings.setDatabaseEnabled(true);
-        
-        // Mengaktifkan fitur GPS (Geolocation) di dalam WebView
         webSettings.setGeolocationEnabled(true); 
         
+        // PENGATURAN COOKIE SUPER
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
         cookieManager.setAcceptThirdPartyCookies(webView, true);
 
-        // 2. FUNGSI BARU: WebChromeClient untuk menangani popup Kamera & Lokasi dari Web
         webView.setWebChromeClient(new WebChromeClient() {
-            // Memberikan izin GPS ke website
             @Override
             public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
                 callback.invoke(origin, true, false);
             }
-
-            // Memberikan izin Kamera ke website
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(() -> request.grant(request.getResources()));
             }
         });
 
-        webView.setWebViewClient(new WebViewClient());
+        // FUNGSI BARU: Simpan Login secara REAL-TIME setiap halaman selesai loading
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                CookieManager.getInstance().flush(); 
+            }
+        });
+
         webView.loadUrl(targetUrl);
     }
 
