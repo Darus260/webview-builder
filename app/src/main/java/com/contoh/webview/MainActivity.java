@@ -86,12 +86,28 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // --- PENYIMPANAN SESI INSTAN ---
+        // --- PENYIMPANAN SESI INSTAN & INJEKSI SCRIPT UNTUK HIDE BANNER GAS ---
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 CookieManager.getInstance().flush(); 
+
+                // Menyuntikkan JavaScript untuk menghilangkan banner peringatan Google Apps Script
+                view.evaluateJavascript(
+                    "(function() { " +
+                    "   var style = document.createElement('style'); " +
+                    "   style.innerHTML = '#warning-bar, .warning-bar { display: none !important; }'; " +
+                    "   document.head.appendChild(style); " +
+                    "   var divs = document.getElementsByTagName('div');" +
+                    "   for (var i = 0; i < divs.length; i++) { " +
+                    "       var text = divs[i].innerText || divs[i].textContent;" +
+                    "       if (text.includes('Aplikasi ini dibuat oleh pengguna Google Apps Script') || " +
+                    "           text.includes('This application was created by another user')) { " +
+                    "           divs[i].style.display = 'none'; " +
+                    "       } " +
+                    "   }" +
+                    "})()", null);
             }
         });
 
